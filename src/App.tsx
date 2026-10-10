@@ -746,15 +746,16 @@ export default function App() {
       />
 
       {/* Footer */}
-      <footer className="no-print bg-white/90 backdrop-blur-md border-t border-slate-200/90 py-6 text-xs text-slate-500 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <img
-              src="/favicon.svg"
-              alt="MONEV Logo"
-              className="w-6 h-6 object-contain"
-              referrerPolicy="no-referrer"
-            />
+      {currentRole !== 'PUBLIC' && (
+        <footer className="no-print bg-white/90 backdrop-blur-md border-t border-slate-200/90 py-6 text-xs text-slate-500 mt-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <img
+                src="/favicon.svg"
+                alt="MONEV Logo"
+                className="w-6 h-6 object-contain"
+                referrerPolicy="no-referrer"
+              />
             <span className="font-extrabold text-slate-900">MONEV Pelayanan Publik</span>
             <span className="text-slate-300">·</span>
             <span className="text-slate-600">Kankemenag Kabupaten Gunungkidul</span>
@@ -788,6 +789,7 @@ export default function App() {
           </div>
         </div>
       </footer>
+      )}
     </div>
   );
 }

@@ -12,7 +12,6 @@ import {
   FileCheck,
   FileText,
   Filter,
-  FolderSearch,
   Gavel,
   Loader2,
   Lock,
@@ -34,7 +33,6 @@ import { calculateBaseScore, calculateEvaluationScore, getMultiJuriSummary } fro
 import { useCategoryAspekConfig, isAspekActive, DEFAULT_ASPEK_CONFIG } from '../utils/aspekConfig';
 import { saveCustomJuriName, findJuriAccountByPin, JURI_DEFAULT_PIN } from '../utils/security';
 import { updateNamaJuriKeServer, getScriptUrl } from '../utils/googleSheets';
-import { LINK_FOLDER_BUKTI } from '../data/driveFolders';
 
 interface JuriVerificationViewProps {
   evaluations: Record<string, SatkerEvaluation>;
@@ -882,20 +880,6 @@ export const JuriVerificationView: React.FC<JuriVerificationViewProps> = ({
                                 Belum ada berkas dari satker
                               </span>
                             )}
-
-                            {LINK_FOLDER_BUKTI[item.code] && (
-                              <a
-                                href={LINK_FOLDER_BUKTI[item.code]}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold transition-all shadow-2xs"
-                                title={`Buka subfolder Google Drive arsip untuk Butir ${item.code}`}
-                              >
-                                <FolderSearch className="w-3.5 h-3.5 text-amber-700" />
-                                <span>Cari di Folder {item.code}</span>
-                                <ExternalLink className="w-3 h-3 opacity-70" />
-                              </a>
-                            )}
                           </div>
                         </div>
 
@@ -992,26 +976,11 @@ export const JuriVerificationView: React.FC<JuriVerificationViewProps> = ({
                 <div className="space-y-6">
                   {/* Video Player & Deskripsi */}
                   <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                      <div className="flex items-center gap-2">
-                        <Video className="w-5 h-5 text-emerald-700" />
-                        <h5 className="font-bold text-slate-900 text-base">
-                          Pratinjau Video Praktik Pelayanan Unit Kerja
-                        </h5>
-                      </div>
-                      {LINK_FOLDER_BUKTI["8.1"] && (
-                        <a
-                          href={LINK_FOLDER_BUKTI["8.1"]}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold transition-all shadow-2xs"
-                          title="Buka subfolder Google Drive untuk Aspek 8.1 Video Praktik"
-                        >
-                          <FolderSearch className="w-3.5 h-3.5 text-amber-700" />
-                          <span>Cari di Folder 8.1</span>
-                          <ExternalLink className="w-3 h-3 opacity-70" />
-                        </a>
-                      )}
+                    <div className="flex items-center gap-2 mb-4">
+                      <Video className="w-5 h-5 text-emerald-700" />
+                      <h5 className="font-bold text-slate-900 text-base">
+                        Pratinjau Video Praktik Pelayanan Unit Kerja
+                      </h5>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

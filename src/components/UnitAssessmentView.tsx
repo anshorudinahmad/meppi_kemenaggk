@@ -11,7 +11,6 @@ import {
   Eye,
   FileCheck,
   FileText,
-  FolderOpen,
   HelpCircle,
   KeyRound,
   Loader2,
@@ -35,7 +34,6 @@ import { getExpectedSatkerPin, validateSatkerPin } from '../utils/security';
 import { useAspekConfig, isAspekActive, getTotalBobotAktif } from '../utils/aspekConfig';
 import { showConfirmDialog, showSuccessAlert, showErrorAlert } from '../utils/sweetAlert';
 import { simpanDataKeServer, uploadFileBuktiKeServer } from '../utils/googleSheets';
-import { LINK_FOLDER_BUKTI } from '../data/driveFolders';
 
 export type AutoSaveStatus = 'idle' | 'saving_local' | 'synced_server' | 'offline';
 
@@ -1255,37 +1253,16 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
                         )}
                       </div>
 
-                      {/* Tombol Aksi Bukti Dukung: In-App Upload & Buka Subfolder Drive */}
-                      <div className="space-y-2">
-                        <button
-                          type="button"
-                          disabled={!isCurrentUnitUnlocked}
-                          onClick={() => handleOpenUploadModal(item.code)}
-                          className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
-                        >
-                          <Plus className="w-4 h-4" />
-                          <span>➕ Unggah Bukti Dukung</span>
-                        </button>
-
-                        {LINK_FOLDER_BUKTI[item.code] && (
-                          <div className="space-y-1.5 pt-1">
-                            <a
-                              href={LINK_FOLDER_BUKTI[item.code]}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition-all shadow-2xs hover:shadow-xs"
-                              title={`Buka subfolder Google Drive untuk Butir ${item.code}`}
-                            >
-                              <FolderOpen className="w-3.5 h-3.5 text-emerald-700" />
-                              <span>📤 Upload Bukti {item.code}</span>
-                              <ExternalLink className="w-3 h-3 text-emerald-600 opacity-70" />
-                            </a>
-                            <p className="text-[11px] text-slate-500 leading-snug">
-                              Klik tombol di atas untuk membuka folder. Buat folder baru dengan nama satker Anda di dalamnya, unggah file, lalu salin link file tersebut ke kolom ini.
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                      {/* Tombol Tambah Unggah Bukti */}
+                      <button
+                        type="button"
+                        disabled={!isCurrentUnitUnlocked}
+                        onClick={() => handleOpenUploadModal(item.code)}
+                        className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>➕ Unggah Bukti Dukung</span>
+                      </button>
 
                       <p className="text-[10px] text-slate-400 mt-2 leading-tight">
                         *File langsung diunggah ke Google Drive secara otomatis (PDF, Gambar, Word, Excel). Maks. 5MB per file.
@@ -1326,22 +1303,6 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
               {/* Video URL & Deskripsi Inputs */}
               <div className="space-y-4">
                 <div>
-                  {LINK_FOLDER_BUKTI["8.1"] && (
-                    <div className="mb-2">
-                      <a
-                        href={LINK_FOLDER_BUKTI["8.1"]}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition-all shadow-2xs hover:shadow-xs"
-                        title="Buka subfolder Google Drive untuk Butir 8.1 (Video Praktik)"
-                      >
-                        <FolderOpen className="w-3.5 h-3.5 text-emerald-700" />
-                        <span>📤 Upload Bukti 8.1 (Folder Drive Video)</span>
-                        <ExternalLink className="w-3 h-3 text-emerald-600 opacity-70" />
-                      </a>
-                    </div>
-                  )}
-
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
                     Tautan Video Resmi (YouTube / Google Drive) *
                   </label>
@@ -1355,7 +1316,7 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
                     className="w-full bg-slate-50 disabled:bg-slate-100 disabled:cursor-not-allowed border border-slate-300 rounded-xl p-3 text-sm text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
                   />
                   <p className="text-[11px] text-slate-500 mt-1.5 leading-snug">
-                    Klik tombol di atas untuk membuka folder. Buat folder baru dengan nama satker Anda di dalamnya, unggah file, lalu salin link file tersebut ke kolom ini.
+                    Rekomendasi: Unggah video ke YouTube (status Publik/Unlisted) atau Google Drive (akses publik) agar video dapat diputar dan dinilai langsung oleh Tim Verifikator.
                   </p>
                 </div>
 
