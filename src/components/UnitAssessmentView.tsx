@@ -11,7 +11,6 @@ import {
   Eye,
   FileCheck,
   FileText,
-  FolderUp,
   HelpCircle,
   KeyRound,
   Loader2,
@@ -28,7 +27,6 @@ import {
   X
 } from 'lucide-react';
 import { ASPEK_LIST, INSTRUMEN_LIST } from '../data/instruments';
-import { LINK_FOLDER_BUKTI, CENTRAL_DRIVE_FOLDER_URL } from '../data/driveFolders';
 import { DAFTAR_UNIT_KERJA } from '../data/units';
 import { BuktiDukungItem, KategoriUnit, SatkerEvaluation, StatusEvaluasi } from '../types';
 import { calculateEvaluationScore, getMultiJuriSummary } from '../utils/scoring';
@@ -1089,49 +1087,6 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
         </div>
       </div>
 
-      {/* Kotak Informasi Bukti Dukung Terpusat (Google Drive Kankemenag) */}
-      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-start gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5 border border-blue-200">
-            {/* Google Drive Logo */}
-            <svg className="w-5 h-5" viewBox="0 0 87.3 78">
-              <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
-              <path d="M43.65 25 29.9 1.2C28.55 2 27.4 3.1 26.6 4.5L1.2 48.55h27.5z" fill="#00ac47"/>
-              <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.2-2.1 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.4l6.15 10.65z" fill="#ea4335"/>
-              <path d="M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.4-4.5 1.2z" fill="#00832d"/>
-              <path d="M59.4 53.6H27.5L13.75 77.4c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.4 4.5-1.2z" fill="#2684fc"/>
-              <path d="m73.55 76.8 12.55-21.75c.8-1.4 1.2-2.95 1.2-4.5 0-1.55-.4-3.1-1.2-4.5L64.75 6.3C63.95 4.9 62.8 3.8 61.45 3L47.7 26.8l11.7 20.25z" fill="#ffba00"/>
-            </svg>
-          </div>
-          <div className="space-y-1">
-            <h4 className="text-xs sm:text-sm font-bold text-blue-950 flex items-center gap-1.5">
-              <span>💡</span>
-              <span>Informasi Bukti Dukung:</span>
-            </h4>
-            <p className="text-xs text-blue-900/90 leading-relaxed max-w-3xl">
-              Anda dapat melampirkan tautan/link Google Drive milik satker Anda masing-masing pada setiap butir penilaian. Namun, jika Anda ingin mengunggah file secara langsung, silakan gunakan Folder Drive Terpusat berikut:
-            </p>
-          </div>
-        </div>
-        <a
-          href={CENTRAL_DRIVE_FOLDER_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow active:scale-95 shrink-0 cursor-pointer border border-blue-500"
-        >
-          <svg className="w-4 h-4 shrink-0" viewBox="0 0 87.3 78">
-            <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#ffffff" fillOpacity="0.95"/>
-            <path d="M43.65 25 29.9 1.2C28.55 2 27.4 3.1 26.6 4.5L1.2 48.55h27.5z" fill="#ffffff" fillOpacity="0.95"/>
-            <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.2-2.1 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.4l6.15 10.65z" fill="#ffffff" fillOpacity="0.95"/>
-            <path d="M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.4-4.5 1.2z" fill="#ffffff" fillOpacity="0.95"/>
-            <path d="M59.4 53.6H27.5L13.75 77.4c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.4 4.5-1.2z" fill="#ffffff" fillOpacity="0.95"/>
-            <path d="m73.55 76.8 12.55-21.75c.8-1.4 1.2-2.95 1.2-4.5 0-1.55-.4-3.1-1.2-4.5L64.75 6.3C63.95 4.9 62.8 3.8 61.45 3L47.7 26.8l11.7 20.25z" fill="#ffffff" fillOpacity="0.95"/>
-          </svg>
-          <span>Buka Folder Upload Bukti Dukung</span>
-          <ExternalLink className="w-3.5 h-3.5 text-blue-200" />
-        </a>
-      </div>
-
       {/* Aspect Questions or Special Video Section */}
       {currentAspek.id !== 8 ? (
         <div className="space-y-6">
@@ -1221,25 +1176,11 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
                   {/* Supporting Evidence Management (Right side: 5 cols) */}
                   <div className="lg:col-span-5 bg-slate-50/90 p-4 rounded-xl border border-slate-200/80 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center justify-between gap-1.5 mb-2">
-                        <div className="flex items-center gap-1.5">
-                          <FileCheck className="w-4 h-4 text-emerald-700" />
-                          <label className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                            Dokumen Bukti Dukung
-                          </label>
-                        </div>
-                        {LINK_FOLDER_BUKTI[item.code] && (
-                          <a
-                            href={LINK_FOLDER_BUKTI[item.code]}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 border border-blue-200 rounded-md text-[10px] font-semibold transition-colors"
-                            title={`Buka subfolder Google Drive butir ${item.code}`}
-                          >
-                            <FolderUp className="w-3 h-3 text-blue-600" />
-                            <span>Folder {item.code}</span>
-                          </a>
-                        )}
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <FileCheck className="w-4 h-4 text-emerald-700" />
+                        <label className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                          Dokumen Bukti Dukung
+                        </label>
                       </div>
 
                       <div className="bg-amber-50/80 border border-amber-200 p-2.5 rounded-lg mb-3">
@@ -1362,34 +1303,20 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
               {/* Video URL & Deskripsi Inputs */}
               <div className="space-y-4">
                 <div>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-1.5">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                      Tautan Video Resmi (YouTube / Google Drive) *
-                    </label>
-                    {LINK_FOLDER_BUKTI["8.1"] && (
-                      <a
-                        href={LINK_FOLDER_BUKTI["8.1"]}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 border border-blue-200 rounded-lg text-[11px] font-bold shadow-xs transition-colors self-start sm:self-auto"
-                        title="Buka subfolder Google Drive video praktik pelayanan"
-                      >
-                        <FolderUp className="w-3.5 h-3.5 text-blue-600" />
-                        <span>📤 Buka Folder 8.1</span>
-                      </a>
-                    )}
-                  </div>
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                    Tautan Video Resmi (YouTube / Google Drive) *
+                  </label>
                   <input
                     type="url"
                     value={currentEval.videoUrl || ''}
                     disabled={!isCurrentUnitUnlocked}
                     onChange={(e) => handleVideoUrlChange(e.target.value)}
                     onInput={(e) => handleVideoUrlChange((e.target as HTMLInputElement).value)}
-                    placeholder={isCurrentUnitUnlocked ? "Masukkan Link Google Drive file Anda di sini... (atau tautan YouTube)" : "Form terkunci — masukkan PIN untuk mengisi tautan video"}
+                    placeholder={isCurrentUnitUnlocked ? "Masukkan tautan YouTube atau Google Drive file video Anda di sini..." : "Form terkunci — masukkan PIN untuk mengisi tautan video"}
                     className="w-full bg-slate-50 disabled:bg-slate-100 disabled:cursor-not-allowed border border-slate-300 rounded-xl p-3 text-sm text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
                   />
                   <p className="text-[11px] text-slate-500 mt-1.5 leading-snug">
-                    Klik tombol di atas jika ingin mengunggah video ke Drive. Buat folder nama satker Anda, unggah video, lalu salin link-nya ke kolom ini. Rekomendasi: Unggah ke YouTube (status Publik/Unlisted) agar pratinjau player dapat diputar langsung oleh Juri.
+                    Rekomendasi: Unggah video ke YouTube (status Publik/Unlisted) atau Google Drive (akses publik) agar video dapat diputar dan dinilai langsung oleh Tim Verifikator.
                   </p>
                 </div>
 
