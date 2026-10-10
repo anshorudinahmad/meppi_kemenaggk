@@ -36,7 +36,9 @@ import {
   getScriptUrl,
   muatDataDariServer,
   setScriptUrl,
-  simpanPengaturanAspekKeServer
+  simpanPengaturanAspekKeServer,
+  updateDaftarJuriKeServer,
+  updateNamaJuriKeServer
 } from '../utils/googleSheets';
 import {
   ADMIN_PIN,
@@ -274,8 +276,39 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
     });
   };
 
+  const [isSyncingJuriToServer, setIsSyncingJuriToServer] = useState<boolean>(false);
+
+  // Sync current Juri list to server Google Sheets using action: "UPDATE_DAFTAR_JURI"
+  const handleSyncJuriToServer = async (customList?: JuriAccount[]) => {
+    const listToSync = customList || juriList;
+    setIsSyncingJuriToServer(true);
+    showToast('Menyinkronkan daftar juri ke Google Sheets...');
+
+    try {
+      const formatted = listToSync.map((j) => ({
+        idJuri: j.id,
+        namaJuri: j.defaultName,
+        pinJuri: j.pin,
+        status: j.isActive === false ? 'NONAKTIF' : 'AKTIF'
+      }));
+
+      const res = await updateDaftarJuriKeServer(formatted, ADMIN_PIN);
+      if (res.success) {
+        showToast(res.message || 'Daftar Juri berhasil disimpan dan disinkronkan ke Google Sheets!');
+        onJuriAccountsUpdated?.();
+        if (onRecalculateMultiJuri) onRecalculateMultiJuri();
+      } else {
+        showToast(`Daftar juri disimpan secara lokal. (${res.message || 'Server belum merespon'})`);
+      }
+    } catch (err: any) {
+      showToast(`Daftar juri disimpan di lokal. (${err?.message || 'Offline'})`);
+    } finally {
+      setIsSyncingJuriToServer(false);
+    }
+  };
+
   // Add Juri
-  const handleAddNewJuri = (e: React.FormEvent) => {
+  const handleAddNewJuri = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newJuriId.trim() || !newJuriName.trim() || !newJuriPin.trim()) {
       showToast('Peringatan: Mohon lengkapi ID, Nama, dan PIN Juri!');
@@ -304,6 +337,11 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
     setNewJuriName('');
 
     onJuriAccountsUpdated?.();
+    // Auto-sync ke server jika URL terpasang
+    const scriptUrl = getScriptUrl();
+    if (scriptUrl && scriptUrl.trim() !== '') {
+      handleSyncJuriToServer(updated);
+    }
   };
 
   // Toggle Active
@@ -313,6 +351,10 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
     const target = updated.find((a) => a.id === id);
     showToast(`Status ${id} diubah menjadi: ${target?.isActive ? 'Aktif' : 'Nonaktif'}.`);
     onJuriAccountsUpdated?.();
+    const scriptUrl = getScriptUrl();
+    if (scriptUrl && scriptUrl.trim() !== '') {
+      handleSyncJuriToServer(updated);
+    }
   };
 
   // Start Edit
@@ -342,6 +384,10 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
     setEditingJuriId(null);
     showToast(`Data akun ${id} berhasil diperbarui!`);
     onJuriAccountsUpdated?.();
+    const scriptUrl = getScriptUrl();
+    if (scriptUrl && scriptUrl.trim() !== '') {
+      handleSyncJuriToServer(updated);
+    }
   };
 
   // Delete Juri
@@ -351,6 +397,10 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
       setJuriList(updated);
       showToast(`Akun ${id} telah dihapus dari sistem.`);
       onJuriAccountsUpdated?.();
+      const scriptUrl = getScriptUrl();
+      if (scriptUrl && scriptUrl.trim() !== '') {
+        handleSyncJuriToServer(updated);
+      }
     }
   };
 
@@ -361,6 +411,10 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
       setJuriList(updated);
       showToast('Susunan akun juri dikembalikan ke 5 Juri default.');
       onJuriAccountsUpdated?.();
+      const scriptUrl = getScriptUrl();
+      if (scriptUrl && scriptUrl.trim() !== '') {
+        handleSyncJuriToServer(updated);
+      }
     }
   };
 
@@ -1077,13 +1131,35 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
                 <span>Reset ke 5 Juri Default</span>
               </button>
 
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-2.5 bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-800 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-2xl text-xs font-bold transition-all duration-200 shadow-md shadow-emerald-950/20 cursor-pointer active:scale-95"
-              >
-                Selesai Kelola Juri
-              </button>
+              <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  disabled={isSyncingJuriToServer}
+                  onClick={() => handleSyncJuriToServer()}
+                  className="px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-2xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
+                  title="Simpan susunan daftar juri ke sheet Pengaturan_Juri Google Sheets"
+                >
+                  {isSyncingJuriToServer ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-700" />
+                      <span>Menyinkronkan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Simpan ke Google Sheets</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-800 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-2xl text-xs font-bold transition-all duration-200 shadow-md shadow-emerald-950/20 cursor-pointer active:scale-95"
+                >
+                  Selesai Kelola Juri
+                </button>
+              </div>
             </>
           ) : (
             <>

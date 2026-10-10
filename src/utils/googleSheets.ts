@@ -498,6 +498,113 @@ export async function updateNamaJuriKeServer(
 }
 
 /**
+ * Menyimpan seluruh daftar Juri (Kelola Data Juri Admin) ke Google Apps Script (POST action: UPDATE_DAFTAR_JURI)
+ * Payload format sesuai backend:
+ * {
+ *   action: "UPDATE_DAFTAR_JURI",
+ *   pinAdmin: "ADMIN-GK26",
+ *   daftarJuri: [
+ *     { idJuri: "JURI-1", namaJuri: "Dr. Mukotip...", pinJuri: "JURI1-GK26", status: "AKTIF" },
+ *     ...
+ *   ]
+ * }
+ */
+export async function updateDaftarJuriKeServer(
+  daftarJuri: Array<{
+    id?: string;
+    idJuri?: string;
+    nama?: string;
+    namaJuri?: string;
+    defaultName?: string;
+    pin?: string;
+    pinJuri?: string;
+    status?: string;
+    isActive?: boolean;
+  }>,
+  pinAdmin: string = ADMIN_PIN
+): Promise<{
+  success: boolean;
+  message: string;
+  isNetworkError?: boolean;
+}> {
+  const url = getScriptUrl();
+  if (!url || url.trim() === '') {
+    return {
+      success: false,
+      message: 'URL Google Apps Script belum dikonfigurasi. Data juri disimpan secara lokal.',
+      isNetworkError: true
+    };
+  }
+
+  try {
+    const formattedDaftar = daftarJuri.map((j) => ({
+      idJuri: String(j.idJuri || j.id || '').trim().toUpperCase(),
+      namaJuri: String(j.namaJuri || j.nama || j.defaultName || '').trim(),
+      pinJuri: String(j.pinJuri || j.pin || '').trim().toUpperCase(),
+      status: j.status ? String(j.status).trim().toUpperCase() : (j.isActive === false ? 'NONAKTIF' : 'AKTIF')
+    }));
+
+    const payload = {
+      action: 'UPDATE_DAFTAR_JURI',
+      pinAdmin: (pinAdmin || ADMIN_PIN).trim().toUpperCase(),
+      daftarJuri: formattedDaftar
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      return {
+        success: false,
+        message: `HTTP ${response.status}: Gagal menghubungi server saat memperbarui data juri.`,
+        isNetworkError: true
+      };
+    }
+
+    const text = await response.text();
+    let resJson: any = null;
+    try {
+      resJson = JSON.parse(text);
+    } catch {
+      if (text.toLowerCase().includes('sukses') || text.toLowerCase().includes('success')) {
+        return {
+          success: true,
+          message: 'Daftar Juri berhasil diperbarui di server!'
+        };
+      }
+      return {
+        success: false,
+        message: 'Respon server Google Sheets bukan JSON yang valid.',
+        isNetworkError: true
+      };
+    }
+
+    if (resJson && (resJson.status === 'success' || resJson.success === true)) {
+      return {
+        success: true,
+        message: resJson.message || 'Daftar Juri berhasil diperbarui di Google Sheets!'
+      };
+    }
+
+    return {
+      success: false,
+      message: resJson?.message || 'Server Google Sheets menolak pembaruan data juri.'
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err?.message || 'Gagal terhubung ke endpoint Google Sheets.',
+      isNetworkError: true
+    };
+  }
+}
+
+/**
  * Menyimpan Pengaturan Aspek Penilaian Dinamis Spesifik per Kategori ke Google Apps Script (POST)
  * Payload format:
  * {

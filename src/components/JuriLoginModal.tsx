@@ -8,7 +8,7 @@ import {
   resetCustomJuriNames,
   addDynamicJuriAccount
 } from '../utils/security';
-import { getScriptUrl, verifikasiPinJuriKeServer, updateNamaJuriKeServer } from '../utils/googleSheets';
+import { getScriptUrl, verifikasiPinJuriKeServer, updateNamaJuriKeServer, updateDaftarJuriKeServer } from '../utils/googleSheets';
 
 interface JuriLoginModalProps {
   isOpen: boolean;
@@ -138,27 +138,14 @@ export const JuriLoginModal: React.FC<JuriLoginModalProps> = ({
     setSuccessSaveMsg(null);
 
     const scriptUrl = getScriptUrl();
-    const updatePromises: Promise<any>[] = [];
 
+    // 1. Simpan perubahan ke draft lokal terlebih dahulu
     Object.entries(editNamesDraft).forEach(([id, name]) => {
       const trimmed = name.trim();
       if (trimmed) {
         saveCustomJuriName(id, trimmed);
-        const acc = juriAccounts.find((a) => a.id === id);
-        if (scriptUrl && scriptUrl.trim() !== '') {
-          const pin = acc?.pin || JURI_DEFAULT_PIN;
-          updatePromises.push(updateNamaJuriKeServer(pin, trimmed, id));
-        }
       }
     });
-
-    if (updatePromises.length > 0) {
-      try {
-        await Promise.all(updatePromises);
-      } catch (err) {
-        console.warn('Sebagian nama juri mungkin belum tersinkron:', err);
-      }
-    }
 
     const updated = getActiveJuriAccounts();
     setJuriAccounts(updated);
@@ -166,9 +153,25 @@ export const JuriLoginModal: React.FC<JuriLoginModalProps> = ({
     if (activeOne) {
       setNameInput(activeOne.defaultName);
     }
+
+    // 2. Kirim update seluruh daftar juri ke Google Sheets
+    if (scriptUrl && scriptUrl.trim() !== '') {
+      try {
+        const formattedDaftar = updated.map((acc) => ({
+          idJuri: acc.id,
+          namaJuri: editNamesDraft[acc.id]?.trim() || acc.defaultName,
+          pinJuri: acc.pin,
+          status: acc.isActive === false ? 'NONAKTIF' : 'AKTIF'
+        }));
+        await updateDaftarJuriKeServer(formattedDaftar);
+      } catch (err) {
+        console.warn('Gagal sinkron daftar juri ke server:', err);
+      }
+    }
+
     setIsSavingName(false);
     setIsEditAllMode(false);
-    setSuccessSaveMsg('Seluruh nama juri berhasil diperbarui dan tersimpan permanen ke Google Sheets!');
+    setSuccessSaveMsg('Seluruh nama juri berhasil diperbarui dan disinkronkan ke Google Sheets!');
     setTimeout(() => setSuccessSaveMsg(null), 4000);
   };
 
