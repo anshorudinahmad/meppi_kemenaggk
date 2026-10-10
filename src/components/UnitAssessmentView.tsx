@@ -14,24 +14,28 @@ import {
   FolderUp,
   HelpCircle,
   KeyRound,
+  Loader2,
   Lock,
   Play,
+  Plus,
   Save,
   Send,
   ShieldAlert,
+  Trash2,
   Unlock,
   UploadCloud,
-  Video
+  Video,
+  X
 } from 'lucide-react';
 import { ASPEK_LIST, INSTRUMEN_LIST } from '../data/instruments';
 import { LINK_FOLDER_BUKTI, CENTRAL_DRIVE_FOLDER_URL } from '../data/driveFolders';
 import { DAFTAR_UNIT_KERJA } from '../data/units';
-import { KategoriUnit, SatkerEvaluation, StatusEvaluasi } from '../types';
+import { BuktiDukungItem, KategoriUnit, SatkerEvaluation, StatusEvaluasi } from '../types';
 import { calculateEvaluationScore, getMultiJuriSummary } from '../utils/scoring';
 import { getExpectedSatkerPin, validateSatkerPin } from '../utils/security';
 import { useAspekConfig, isAspekActive, getTotalBobotAktif } from '../utils/aspekConfig';
-import { showConfirmDialog, showSuccessAlert } from '../utils/sweetAlert';
-import { simpanDataKeServer } from '../utils/googleSheets';
+import { showConfirmDialog, showSuccessAlert, showErrorAlert } from '../utils/sweetAlert';
+import { simpanDataKeServer, uploadFileBuktiKeServer } from '../utils/googleSheets';
 
 export type AutoSaveStatus = 'idle' | 'saving_local' | 'synced_server' | 'offline';
 
@@ -101,6 +105,13 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
   const [isFading, setIsFading] = useState<boolean>(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fadeTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // FITUR 23: State Modal Unggah Bukti Dukung Multi-Dokumen
+  const [uploadModalItemCode, setUploadModalItemCode] = useState<string | null>(null);
+  const [uploadNamaEviden, setUploadNamaEviden] = useState<string>('');
+  const [uploadSelectedFile, setUploadSelectedFile] = useState<File | null>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Sync selectedUnitId when activeUnitId is updated from outside
   React.useEffect(() => {
@@ -200,7 +211,8 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
             deskripsiVideo: dataToSync.videoDeskripsi || '',
             isianSatker: {
               responses: dataToSync.responses || {},
-              links: dataToSync.links || {}
+              links: dataToSync.links || {},
+              buktiDukung: dataToSync.buktiDukung || {}
             },
             pin: currentPin || ''
           });
@@ -269,6 +281,7 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
         JSON.stringify({
           responses: updatedUnitData.responses,
           links: updatedUnitData.links,
+          buktiDukung: updatedUnitData.buktiDukung,
           videoUrl: updatedUnitData.videoUrl,
           videoDeskripsi: updatedUnitData.videoDeskripsi
         })
@@ -306,6 +319,161 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
   const handleLinkChange = (code: string, link: string) => {
     const updatedLinks = { ...currentEval.links, [code]: link };
     performAutoSave({ links: updatedLinks });
+  };
+
+  // FITUR 23: Handlers Bukti Dukung Multi-Dokumen
+  const handleOpenUploadModal = (code: string) => {
+    if (!isCurrentUnitUnlocked) {
+      showToast('Harap masukkan PIN Satker terlebih dahulu untuk mengunggah dokumen.');
+      return;
+    }
+    setUploadModalItemCode(code);
+    setUploadNamaEviden('');
+    setUploadSelectedFile(null);
+    setUploadError(null);
+    setIsUploadingFile(false);
+  };
+
+  const handleCloseUploadModal = () => {
+    if (isUploadingFile) return;
+    setUploadModalItemCode(null);
+    setUploadNamaEviden('');
+    setUploadSelectedFile(null);
+    setUploadError(null);
+  };
+
+  const handleDeleteBuktiDukung = async (code: string, indexToDelete: number) => {
+    if (!isCurrentUnitUnlocked) {
+      showToast('Form terkunci — masukkan PIN untuk mengelola bukti.');
+      return;
+    }
+    const currentList = currentEval.buktiDukung?.[code] || [];
+    const itemToDelete = currentList[indexToDelete];
+    const confirmed = await showConfirmDialog({
+      title: 'Hapus Dokumen Bukti?',
+      text: `Apakah Anda yakin ingin menghapus eviden "${itemToDelete?.namaEviden || 'Dokumen'}"?`,
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal',
+      icon: 'warning'
+    });
+
+    if (!confirmed) return;
+
+    const updatedList = currentList.filter((_, idx) => idx !== indexToDelete);
+    const updatedBuktiDukung = {
+      ...(currentEval.buktiDukung || {}),
+      [code]: updatedList
+    };
+
+    // Update juga string legacy links jika ini dokumen pertama atau jika kosong
+    const updatedLinks = { ...(currentEval.links || {}) };
+    if (updatedList.length > 0) {
+      updatedLinks[code] = updatedList[0].url;
+    } else {
+      delete updatedLinks[code];
+    }
+
+    performAutoSave({
+      buktiDukung: updatedBuktiDukung,
+      links: updatedLinks
+    });
+
+    showToast('Dokumen bukti dukung berhasil dihapus.');
+  };
+
+  const handleDoUploadFile = async () => {
+    if (!uploadModalItemCode) return;
+    if (!uploadNamaEviden.trim()) {
+      setUploadError('Nama / Judul Eviden wajib diisi!');
+      return;
+    }
+    if (!uploadSelectedFile) {
+      setUploadError('Pilih file dokumen terlebih dahulu!');
+      return;
+    }
+
+    // Validasi ukuran file (Max 5MB = 5 * 1024 * 1024 bytes)
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (uploadSelectedFile.size > MAX_SIZE) {
+      setUploadError('Ukuran file melebihi batas 5MB! Silakan pilih file yang lebih kecil.');
+      return;
+    }
+
+    setUploadError(null);
+    setIsUploadingFile(true);
+
+    try {
+      // 1. Baca file dengan FileReader sebagai DataURL
+      const base64String = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Pisahkan header data:...;base64, untuk murni base64
+          const parts = result.split(',');
+          if (parts.length > 1) {
+            resolve(parts[1]);
+          } else {
+            resolve(result);
+          }
+        };
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(uploadSelectedFile);
+      });
+
+      // 2. Format nama file: idSatkerTerpilih + "_" + idButir + "_" + namaEviden
+      const sanitizedNamaEviden = uploadNamaEviden.trim().replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_');
+      const sanitizedFileName = `${selectedUnitId}_${uploadModalItemCode}_${sanitizedNamaEviden}`;
+
+      // 3. Kirim POST ke Apps Script
+      const res = await uploadFileBuktiKeServer({
+        pin: currentPin,
+        base64: base64String,
+        mimeType: uploadSelectedFile.type || 'application/octet-stream',
+        fileName: sanitizedFileName
+      });
+
+      if (!res.success || !res.url) {
+        throw new Error(res.message || 'Gagal mengunggah file ke Google Drive/Server.');
+      }
+
+      // 4. Masukkan { namaEviden, url } ke array buktiDukung butir tersebut
+      const currentList = currentEval.buktiDukung?.[uploadModalItemCode] || [];
+      // Jika sebelumnya hanya ada legacy links tapi belum ada buktiDukung, kita pertahankan
+      const newItem: BuktiDukungItem = {
+        namaEviden: uploadNamaEviden.trim(),
+        url: res.url
+      };
+      const updatedList = [...currentList, newItem];
+      const updatedBuktiDukung = {
+        ...(currentEval.buktiDukung || {}),
+        [uploadModalItemCode]: updatedList
+      };
+
+      // Sinkronkan juga links[code] legacy dengan file pertama agar kompatibel
+      const updatedLinks = {
+        ...(currentEval.links || {}),
+        [uploadModalItemCode]: updatedList[0].url
+      };
+
+      // 5. Simpan ke state & localStorage (Auto-Save)
+      performAutoSave({
+        buktiDukung: updatedBuktiDukung,
+        links: updatedLinks
+      });
+
+      setIsUploadingFile(false);
+      setUploadModalItemCode(null);
+      setUploadNamaEviden('');
+      setUploadSelectedFile(null);
+
+      showSuccessAlert(
+        'Upload Berhasil!',
+        `Dokumen "${newItem.namaEviden}" telah berhasil diunggah ke Google Drive dan tersimpan di evaluasi.`
+      );
+    } catch (err: any) {
+      setIsUploadingFile(false);
+      setUploadError(err?.message || 'Terjadi kesalahan saat memproses file.');
+    }
   };
 
   // Video data change (Aspek 8) (Auto-Save Local & Debounce Background Sync)
@@ -970,6 +1138,13 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
             const currentSelectedScore = currentEval.responses?.[item.code];
             const currentLink = currentEval.links?.[item.code] || '';
 
+            // Dokumen bukti dukung: utamakan array buktiDukung, fallback ke legacy link jika ada
+            const docList: BuktiDukungItem[] = currentEval.buktiDukung?.[item.code]
+              ? currentEval.buktiDukung[item.code]
+              : currentLink
+              ? [{ namaEviden: 'Dokumen Bukti', url: currentLink }]
+              : [];
+
             return (
               <div
                 key={item.code}
@@ -1042,14 +1217,28 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
                     })}
                   </div>
 
-                  {/* Supporting Evidence Input (Right side: 5 cols) */}
+                  {/* Supporting Evidence Management (Right side: 5 cols) */}
                   <div className="lg:col-span-5 bg-slate-50/90 p-4 rounded-xl border border-slate-200/80 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <FileCheck className="w-4 h-4 text-emerald-700" />
-                        <label className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                          Link Bukti Dukung
-                        </label>
+                      <div className="flex items-center justify-between gap-1.5 mb-2">
+                        <div className="flex items-center gap-1.5">
+                          <FileCheck className="w-4 h-4 text-emerald-700" />
+                          <label className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                            Dokumen Bukti Dukung
+                          </label>
+                        </div>
+                        {LINK_FOLDER_BUKTI[item.code] && (
+                          <a
+                            href={LINK_FOLDER_BUKTI[item.code]}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 border border-blue-200 rounded-md text-[10px] font-semibold transition-colors"
+                            title={`Buka subfolder Google Drive butir ${item.code}`}
+                          >
+                            <FolderUp className="w-3 h-3 text-blue-600" />
+                            <span>Folder {item.code}</span>
+                          </a>
+                        )}
                       </div>
 
                       <div className="bg-amber-50/80 border border-amber-200 p-2.5 rounded-lg mb-3">
@@ -1060,57 +1249,89 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
                         </p>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-1.5">
-                        <p className="text-[11px] text-slate-500 font-medium">
-                          Tautan Dokumen / Bukti Dukung:
-                        </p>
-                        {LINK_FOLDER_BUKTI[item.code] && (
-                          <a
-                            href={LINK_FOLDER_BUKTI[item.code]}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 border border-blue-200 rounded-lg text-[11px] font-bold shadow-xs transition-colors self-start sm:self-auto"
-                            title={`Buka subfolder Google Drive butir ${item.code}`}
-                          >
-                            <FolderUp className="w-3.5 h-3.5 text-blue-600" />
-                            <span>📤 Buka Folder {item.code}</span>
-                          </a>
+                      {/* Daftar Bukti Dukung yang Sudah Diunggah */}
+                      <div className="space-y-2 mb-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-slate-700">
+                            Berkas Terunggah ({docList.length}):
+                          </span>
+                        </div>
+
+                        {docList.length === 0 ? (
+                          <div className="p-3 bg-white border border-dashed border-slate-300 rounded-xl text-center">
+                            <p className="text-xs text-slate-400 italic">
+                              Belum ada berkas bukti dukung yang diunggah.
+                            </p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              Klik tombol di bawah untuk mengunggah file bukti.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs divide-y divide-slate-100">
+                            {docList.map((doc, docIdx) => (
+                              <div
+                                key={docIdx}
+                                className="p-2.5 flex items-center justify-between gap-2 hover:bg-slate-50 transition-colors"
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
+                                  <span
+                                    className="text-xs font-medium text-slate-800 truncate"
+                                    title={doc.namaEviden}
+                                  >
+                                    {doc.namaEviden}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <a
+                                    href={doc.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-semibold transition-colors"
+                                    title="Lihat file eviden di tab baru"
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                    <span>Lihat</span>
+                                  </a>
+                                  {isCurrentUnitUnlocked && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteBuktiDukung(item.code, docIdx)}
+                                      className="inline-flex items-center gap-1 px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-semibold transition-colors cursor-pointer"
+                                      title="Hapus berkas ini"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                      <span>Hapus</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
 
-                      <input
-                        type="url"
-                        value={currentLink}
+                      {/* Tombol Tambah Unggah Bukti */}
+                      <button
+                        type="button"
                         disabled={!isCurrentUnitUnlocked}
-                        onChange={(e) => handleLinkChange(item.code, e.target.value)}
-                        onInput={(e) => handleLinkChange(item.code, (e.target as HTMLInputElement).value)}
-                        placeholder={isCurrentUnitUnlocked ? "Masukkan Link Google Drive file Anda di sini..." : "Form terkunci — masukkan PIN untuk mengisi bukti"}
-                        className="w-full bg-white disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
-                      />
+                        onClick={() => handleOpenUploadModal(item.code)}
+                        className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>➕ Unggah Bukti Dukung</span>
+                      </button>
 
-                      <p className="text-[11px] text-slate-500 mt-1.5 leading-snug">
-                        Klik tombol di atas, buat folder baru dengan nama Satker Anda, unggah file, lalu copy-paste link file Anda ke kolom ini.
-                      </p>
-                      <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">
-                        *Pastikan izin tautan disetel &quot;Anyone with the link can view&quot;.
+                      <p className="text-[10px] text-slate-400 mt-2 leading-tight">
+                        *File langsung diunggah ke Google Drive secara otomatis (PDF, Gambar, Word, Excel). Maks. 5MB per file.
                       </p>
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
-                      {currentLink ? (
-                        <a
-                          href={currentLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-900 font-semibold"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          <span>Uji Buka Tautan Bukti</span>
-                        </a>
-                      ) : (
-                        <span className="text-slate-400 italic">Belum ada tautan bukti</span>
-                      )}
-                      <span className="text-slate-400">PDF / Foto / SK</span>
+                      <span className="text-slate-500 font-medium">
+                        Total {docList.length} Dokumen
+                      </span>
+                      <span className="text-slate-400">PDF / Foto / SK / Docx</span>
                     </div>
                   </div>
                 </div>
@@ -1625,6 +1846,122 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
           </table>
         </div>
       </div>
+
+      {/* ========================================================= */}
+      {/* FITUR 23: MODAL / POP-UP UNGGAH BUKTI DUKUNG */}
+      {/* ========================================================= */}
+      {uploadModalItemCode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 sm:p-7 overflow-hidden relative">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-blue-100 text-blue-800 rounded-xl">
+                  <UploadCloud className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Unggah Bukti Dukung
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono">
+                    Butir Penilaian {uploadModalItemCode} • {currentUnit.nama}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isUploadingFile}
+                onClick={handleCloseUploadModal}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <div className="mt-5 space-y-4">
+              {uploadError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{uploadError}</span>
+                </div>
+              )}
+
+              {/* Input Nama Eviden */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Nama / Judul Eviden <span className="text-rose-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  disabled={isUploadingFile}
+                  value={uploadNamaEviden}
+                  onChange={(e) => setUploadNamaEviden(e.target.value)}
+                  placeholder="Contoh: SK Tim Standar Pelayanan, Foto Rapat, dsb."
+                  className="w-full bg-slate-50 focus:bg-white border border-slate-300 rounded-xl p-3 text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:opacity-60"
+                />
+              </div>
+
+              {/* Input File */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Pilih Dokumen File <span className="text-rose-600">*</span>
+                </label>
+                <input
+                  type="file"
+                  disabled={isUploadingFile}
+                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setUploadSelectedFile(file);
+                    if (file && !uploadNamaEviden.trim()) {
+                      // Usulkan nama dari file tanpa ekstensi
+                      const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+                      setUploadNamaEviden(baseName);
+                    }
+                  }}
+                  className="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-slate-200 rounded-xl p-2 bg-slate-50 disabled:opacity-60"
+                />
+                <p className="text-[11px] text-slate-500 mt-1.5 leading-snug">
+                  Format didukung: <strong>.pdf, .png, .jpg, .jpeg, .doc, .docx, .xls, .xlsx</strong>.
+                  <br />
+                  <span className="text-amber-800 font-medium">Batas maksimal: 5MB per file.</span> File akan otomatis dikonversi dan disimpan ke Google Drive.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={isUploadingFile}
+                  onClick={handleCloseUploadModal}
+                  className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={isUploadingFile || !uploadNamaEviden.trim() || !uploadSelectedFile}
+                  onClick={handleDoUploadFile}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
+                >
+                  {isUploadingFile ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>⏳ Mengunggah... (Jangan tutup halaman)</span>
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloud className="w-4 h-4" />
+                      <span>Mulai Unggah</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================= */}
       {/* FITUR 20: INDIKATOR UI AUTO-SAVE (STICKY POJOK KANAN BAWAH) */}

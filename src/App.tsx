@@ -349,7 +349,8 @@ export default function App() {
         deskripsiVideo: latestData.videoDeskripsi || '',
         isianSatker: {
           responses: latestData.responses || {},
-          links: latestData.links || {}
+          links: latestData.links || {},
+          buktiDukung: latestData.buktiDukung || {}
         },
         pin: pin || ''
       };
@@ -437,7 +438,8 @@ export default function App() {
       deskripsiVideo: updatedUnitData.videoDeskripsi || '',
       isianSatker: {
         responses: updatedUnitData.responses,
-        links: updatedUnitData.links
+        links: updatedUnitData.links,
+        buktiDukung: updatedUnitData.buktiDukung || {}
       },
       pin: pin || ''
     };

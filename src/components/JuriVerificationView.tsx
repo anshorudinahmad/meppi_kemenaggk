@@ -27,7 +27,7 @@ import {
 import { ASPEK_LIST, INSTRUMEN_LIST } from '../data/instruments';
 import { LINK_FOLDER_BUKTI } from '../data/driveFolders';
 import { DAFTAR_UNIT_KERJA } from '../data/units';
-import { KategoriUnit, SatkerEvaluation, StatusEvaluasi } from '../types';
+import { BuktiDukungItem, KategoriUnit, SatkerEvaluation, StatusEvaluasi } from '../types';
 import { calculateBaseScore, calculateEvaluationScore, getMultiJuriSummary } from '../utils/scoring';
 import { useCategoryAspekConfig, isAspekActive, DEFAULT_ASPEK_CONFIG } from '../utils/aspekConfig';
 
@@ -708,6 +708,11 @@ export const JuriVerificationView: React.FC<JuriVerificationViewProps> = ({
                   {INSTRUMEN_LIST.filter((i) => i.aspekId === activeWorkspaceTab).map((item) => {
                     const claimedScore = verifyingEval?.responses?.[item.code] ?? 0;
                     const evidenceLink = verifyingEval?.links?.[item.code];
+                    const docList: BuktiDukungItem[] = verifyingEval?.buktiDukung?.[item.code]
+                      ? verifyingEval.buktiDukung[item.code]
+                      : evidenceLink
+                      ? [{ namaEviden: 'Dokumen Bukti', url: evidenceLink }]
+                      : [];
                     const juriScore = tempVerifScores[item.code] ?? claimedScore;
                     const juriNote = tempVerifNotes[item.code] ?? '';
 
@@ -725,20 +730,26 @@ export const JuriVerificationView: React.FC<JuriVerificationViewProps> = ({
                             <h5 className="font-bold text-slate-900 text-sm">{item.judul}</h5>
                           </div>
 
+                          {/* Daftar Dokumen Bukti Dukung (Chips/Buttons) */}
                           <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-                            {evidenceLink ? (
-                              <a
-                                href={evidenceLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-semibold transition-colors"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                                <span>Buka Dokumen Bukti Dukung</span>
-                              </a>
+                            {docList.length > 0 ? (
+                              docList.map((doc, docIdx) => (
+                                <a
+                                  key={docIdx}
+                                  href={doc.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-semibold transition-colors shadow-xs"
+                                  title={`Buka dokumen: ${doc.namaEviden}`}
+                                >
+                                  <FileText className="w-3.5 h-3.5 text-blue-600" />
+                                  <span className="max-w-[180px] truncate">{doc.namaEviden}</span>
+                                  <ExternalLink className="w-3 h-3 opacity-60" />
+                                </a>
+                              ))
                             ) : (
                               <span className="text-xs text-slate-400 italic">
-                                Belum ada link dari satker
+                                Belum ada berkas dari satker
                               </span>
                             )}
 

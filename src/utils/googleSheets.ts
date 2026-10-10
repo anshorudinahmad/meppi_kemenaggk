@@ -56,6 +56,14 @@ export function normalizeServerData(rawData: any): Record<string, SatkerEvaluati
           }
         }
 
+        // Parse buktiDukung if exists
+        let buktiDukungParsed = item.buktiDukung || item.isianSatker?.buktiDukung;
+        if (typeof buktiDukungParsed === 'string') {
+          try {
+            buktiDukungParsed = JSON.parse(buktiDukungParsed);
+          } catch {}
+        }
+
         result[id] = {
           status: item.status === 'Sudah Submit' || item.status === 'SUBMITTED'
             ? 'SUBMITTED'
@@ -66,6 +74,7 @@ export function normalizeServerData(rawData: any): Record<string, SatkerEvaluati
             : 'BELUM_ISI',
           responses: item.responses || item.isianSatker?.responses || item.isianSatker || {},
           links: item.links || item.isianSatker?.links || {},
+          buktiDukung: (buktiDukungParsed && typeof buktiDukungParsed === 'object') ? buktiDukungParsed : undefined,
           videoUrl: item.videoUrl || item.linkVideo || '',
           videoDeskripsi: item.videoDeskripsi || item.deskripsiVideo || '',
           verifScores: item.verifScores || item.verifikasiJuri?.scores || (multiJuriMap ? {} : item.verifikasiJuri) || {},
@@ -87,6 +96,7 @@ export function normalizeServerData(rawData: any): Record<string, SatkerEvaluati
       if (id) {
         let parsedResponses: Record<string, number> = {};
         let parsedLinks: Record<string, string> = {};
+        let parsedBuktiDukung: Record<string, any> = {};
         let parsedVerifScores: Record<string, number> = {};
         let parsedVerifNotes: Record<string, string> = {};
         let multiJuriMap: any = undefined;
@@ -96,13 +106,25 @@ export function normalizeServerData(rawData: any): Record<string, SatkerEvaluati
             const parsed = JSON.parse(row.isianSatker);
             parsedResponses = parsed.responses || parsed;
             parsedLinks = parsed.links || {};
+            parsedBuktiDukung = parsed.buktiDukung || {};
           } else if (typeof row.isianSatker === 'object' && row.isianSatker !== null) {
             parsedResponses = row.isianSatker.responses || row.isianSatker;
             parsedLinks = row.isianSatker.links || {};
+            parsedBuktiDukung = row.isianSatker.buktiDukung || {};
           }
         } catch {
           // fallback
         }
+
+        try {
+          if (row.buktiDukung) {
+            if (typeof row.buktiDukung === 'string') {
+              parsedBuktiDukung = JSON.parse(row.buktiDukung);
+            } else if (typeof row.buktiDukung === 'object') {
+              parsedBuktiDukung = row.buktiDukung;
+            }
+          }
+        } catch {}
 
         try {
           if (typeof row.verifikasiJuri === 'string') {
@@ -136,6 +158,7 @@ export function normalizeServerData(rawData: any): Record<string, SatkerEvaluati
             : 'BELUM_ISI',
           responses: Object.keys(parsedResponses).length > 0 ? parsedResponses : (row.responses || {}),
           links: Object.keys(parsedLinks).length > 0 ? parsedLinks : (row.links || {}),
+          buktiDukung: Object.keys(parsedBuktiDukung).length > 0 ? parsedBuktiDukung : (row.buktiDukung || undefined),
           videoUrl: row.linkVideo || row.videoUrl || '',
           videoDeskripsi: row.deskripsiVideo || row.videoDeskripsi || '',
           verifScores: Object.keys(parsedVerifScores).length > 0 ? parsedVerifScores : (row.verifScores || {}),
@@ -408,6 +431,103 @@ export async function simpanPengaturanAspekKeServer(
   };
 
   return simpanDataKeServer(payload);
+}
+
+/**
+ * Mengunggah file bukti dukung ke Google Apps Script (POST action: UPLOAD_FILE)
+ * Payload:
+ * {
+ *   action: "UPLOAD_FILE",
+ *   pin: inputPinSatker,
+ *   base64: base64String,
+ *   mimeType: file.type,
+ *   fileName: idSatkerTerpilih + "_" + idButir + "_" + namaEviden
+ * }
+ */
+export async function uploadFileBuktiKeServer(params: {
+  pin: string;
+  base64: string;
+  mimeType: string;
+  fileName: string;
+}): Promise<{
+  success: boolean;
+  url?: string;
+  message: string;
+}> {
+  const url = getScriptUrl();
+  if (!url || url.trim() === '') {
+    return {
+      success: false,
+      message: 'URL Google Apps Script belum dikonfigurasi.'
+    };
+  }
+
+  try {
+    const payload = {
+      action: 'UPLOAD_FILE',
+      pin: params.pin,
+      base64: params.base64,
+      mimeType: params.mimeType,
+      fileName: params.fileName
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      return {
+        success: false,
+        message: `HTTP ${response.status}: Gagal mengunggah file ke server.`
+      };
+    }
+
+    const text = await response.text();
+    let resJson: any = null;
+    try {
+      resJson = JSON.parse(text);
+    } catch {
+      // If server returned plain text URL
+      if (text.startsWith('http')) {
+        return {
+          success: true,
+          url: text.trim(),
+          message: 'File berhasil diunggah!'
+        };
+      }
+    }
+
+    if (resJson) {
+      if (resJson.status === 'error' || resJson.success === false) {
+        return {
+          success: false,
+          message: resJson.message || 'Server menolak pengunggahan file.'
+        };
+      }
+      const fileUrl = resJson.url || resJson.fileUrl || resJson.downloadUrl || resJson.link;
+      if (fileUrl) {
+        return {
+          success: true,
+          url: fileUrl,
+          message: resJson.message || 'File berhasil diunggah!'
+        };
+      }
+    }
+
+    return {
+      success: false,
+      message: 'Server tidak mengembalikan URL file yang valid.'
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error?.message || 'Gagal terhubung ke server saat mengunggah file.'
+    };
+  }
 }
 
 

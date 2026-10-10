@@ -36,10 +36,16 @@ export interface JuriVerificationEntry {
   verifiedAt: string;
 }
 
+export interface BuktiDukungItem {
+  namaEviden: string;
+  url: string;
+}
+
 export interface SatkerEvaluation {
   status: StatusEvaluasi;
   responses: Record<string, number>; // code -> score 0-4
-  links: Record<string, string>; // code -> link bukti
+  links: Record<string, string>; // code -> link bukti (legacy compatibility)
+  buktiDukung?: Record<string, BuktiDukungItem[]>; // code -> array of { namaEviden, url }
   videoUrl?: string;
   videoDeskripsi?: string;
   verifScores: Record<string, number>; // code -> score 0-4 (rerata multi-juri)
