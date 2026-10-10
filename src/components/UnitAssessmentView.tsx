@@ -24,7 +24,7 @@ import {
   Video
 } from 'lucide-react';
 import { ASPEK_LIST, INSTRUMEN_LIST } from '../data/instruments';
-import { LINK_FOLDER_BUKTI } from '../data/driveFolders';
+import { LINK_FOLDER_BUKTI, CENTRAL_DRIVE_FOLDER_URL } from '../data/driveFolders';
 import { DAFTAR_UNIT_KERJA } from '../data/units';
 import { KategoriUnit, SatkerEvaluation, StatusEvaluasi } from '../types';
 import { calculateEvaluationScore, getMultiJuriSummary } from '../utils/scoring';
@@ -945,7 +945,7 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
           </div>
         </div>
         <a
-          href="https://drive.google.com/drive/folders/1A17BS_i_8IiQd4b0hPHvXIRjAFXYzUiI?usp=sharing"
+          href={CENTRAL_DRIVE_FOLDER_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow active:scale-95 shrink-0 cursor-pointer border border-blue-500"

@@ -23,6 +23,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { ASPEK_LIST, INSTRUMEN_LIST } from '../data/instruments';
+import { CENTRAL_DRIVE_FOLDER_URL } from '../data/driveFolders';
 
 interface PanduanModalProps {
   isOpen: boolean;
@@ -396,7 +397,7 @@ export const PanduanModal: React.FC<PanduanModalProps> = ({ isOpen, onClose }) =
                       <em> "Siapa saja yang memiliki link dapat melihat (Viewer)"</em> agar juri dapat memverifikasi berkas.
                       Jika ingin mengunggah file langsung ke folder bersama, Anda dapat menggunakan{' '}
                       <a
-                        href="https://drive.google.com/drive/folders/1A17BS_i_8IiQd4b0hPHvXIRjAFXYzUiI?usp=sharing"
+                        href={CENTRAL_DRIVE_FOLDER_URL}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-700 underline font-semibold"

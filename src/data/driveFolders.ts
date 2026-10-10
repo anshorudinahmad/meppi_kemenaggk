@@ -28,4 +28,5 @@ export const LINK_FOLDER_BUKTI: Record<string, string> = {
 };
 
 // URL Folder Utama / Terpusat Google Drive Kemenag
-export const CENTRAL_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1A17BS_i_8IiQd4b0hPHvXIRjAFXYzUiI?usp=sharing";
+export const CENTRAL_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1TcNB-3-GW8z-HdniD8qGLotjOZl8oyic?usp=sharing";
+
