@@ -1809,9 +1809,34 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
             {/* Modal Form */}
             <div className="mt-5 space-y-4">
               {uploadError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-                  <span>{uploadError}</span>
+                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-900 text-xs space-y-2">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-bold text-rose-800">
+                        {uploadError.includes('DriveApp') || uploadError.includes('auth/drive')
+                          ? 'Perlu Otorisasi Izin Google Drive di Server'
+                          : 'Gagal Mengunggah File'}
+                      </p>
+                      <p className="text-[11px] leading-relaxed text-rose-700">
+                        {uploadError.includes('DriveApp') || uploadError.includes('auth/drive')
+                          ? 'Google Apps Script belum memiliki izin akses Google Drive untuk membuat file. Pemilik Google Spreadsheet perlu membuka Apps Script, menjalankan otorisasi izin sekali, lalu Deploy "Versi Baru".'
+                          : uploadError}
+                      </p>
+                    </div>
+                  </div>
+                  {(uploadError.includes('DriveApp') || uploadError.includes('auth/drive')) && (
+                    <div className="bg-white/80 p-2.5 rounded-lg border border-rose-200/80 text-[11px] text-slate-700 space-y-1 font-mono">
+                      <div className="text-[10px] font-bold text-slate-800 font-sans uppercase tracking-wider">
+                        Solusi 3 Langkah Pemilik Spreadsheet:
+                      </div>
+                      <ol className="list-decimal pl-4 space-y-0.5 text-[10px] font-sans text-slate-600">
+                        <li>Buka Spreadsheet &gt; <strong>Ekstensi &gt; Apps Script</strong>.</li>
+                        <li>Jalankan fungsi tes / simpan lalu klik <strong>Tinjau Izin &gt; Lanjutan &gt; Buka &gt; Izinkan</strong>.</li>
+                        <li>Klik <strong>Deploy &gt; Kelola deployment &gt; Edit &gt; Versi Baru &gt; Terapkan</strong>.</li>
+                      </ol>
+                    </div>
+                  )}
                 </div>
               )}
 
