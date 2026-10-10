@@ -306,7 +306,7 @@ export const PublicPortalView: React.FC<PublicPortalViewProps> = ({
             Unit Pelayanan Terbaik Tahun Ini
           </h2>
           <p className="text-xs sm:text-sm text-slate-600">
-            Penghargaan bergengsi bagi Satuan Kerja peraih peringkat tertinggi dengan predikat pelayanan prima di lingkungan Kemenag Kabupaten Gunungkidul.
+            Penghargaan bagi Unit/Satuan Kerja sebagai penyelenggara pelayanan terbaik di lingkungan Kemenag Kabupaten Gunungkidul.
           </p>
         </div>
 
