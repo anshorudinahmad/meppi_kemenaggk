@@ -106,9 +106,9 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="text-[10px] font-black text-amber-300 tracking-wider uppercase bg-emerald-950/90 px-2 py-0.5 rounded-md border border-amber-400/40 shadow-xs">
                   Portal Resmi
                 </span>
-                <span className="text-xs text-emerald-100 font-bold">Monitoring dan Evaluasi Pelayanan Publik TerIntegrasi</span>
+                <span className="text-xs text-emerald-100 font-bold" style={{ fontSize: '15px' }}>Monitoring dan Evaluasi Pelayanan Publik TerIntegrasi</span>
               </div>
-              <p className="text-[11px] text-emerald-300/90 font-medium leading-none mt-1">
+              <p className="text-[11px] text-emerald-300/90 font-medium leading-none mt-1" style={{ fontSize: '13px' }}>
                 KUA &amp; Madrasah Negeri Kabupaten Gunungkidul
               </p>
             </div>
@@ -127,7 +127,7 @@ export const Header: React.FC<HeaderProps> = ({
                     className="px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:text-slate-950 hover:bg-amber-400 bg-emerald-950/70 border border-amber-400/40 transition-all duration-200 flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs active:scale-95"
                   >
                     <BookOpen className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Panduan PDF</span>
+                    <span className="hidden sm:inline" style={{ fontSize: '13px' }}>Panduan PDF</span>
                   </button>
                 )}
 
@@ -214,7 +214,7 @@ export const Header: React.FC<HeaderProps> = ({
                     className="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-300 hover:text-slate-950 hover:bg-amber-400 bg-emerald-950/70 border border-amber-400/40 transition-all duration-200 flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs active:scale-95"
                   >
                     <BookOpen className="w-3.5 h-3.5" />
-                    <span className="hidden lg:inline">Panduan PDF</span>
+                    <span className="hidden lg:inline" style={{ fontSize: '13px' }}>Panduan PDF</span>
                   </button>
                 )}
 
