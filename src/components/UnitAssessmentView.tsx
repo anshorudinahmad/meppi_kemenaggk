@@ -911,8 +911,8 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-emerald-900">Akses Edit Terbuka</span>
-                    <span className="text-[10px] font-mono bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded font-bold">
+                    <span className="text-xs font-bold text-emerald-900" style={{ fontSize: '13px' }}>Akses Edit Terbuka</span>
+                    <span className="text-[10px] font-mono bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded font-bold" style={{ fontSize: '12px' }}>
                       PIN: {currentPin}
                     </span>
                   </div>
