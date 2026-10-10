@@ -541,6 +541,9 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
                   <li>
                     Saat login verifikator, aplikasi mengirim request POST <code>&#123; action: &quot;VERIFIKASI_PIN_JURI&quot;, pin: ... &#125;</code> untuk memvalidasi identitas JURI-6, JURI-7, dst. secara live.
                   </li>
+                  <li>
+                    Saat nama profil juri diubah, aplikasi mengirim request POST <code>&#123; action: &quot;UPDATE_NAMA_JURI&quot;, pin: ..., namaBaru: ... &#125;</code> untuk menimpa sel nama juri di Google Sheets secara permanen.
+                  </li>
                 </ul>
               </div>
             </>

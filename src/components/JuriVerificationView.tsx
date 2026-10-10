@@ -6,15 +6,18 @@ import {
   CheckCircle2,
   ChevronDown,
   Copy,
+  Edit3,
   ExternalLink,
   Eye,
   FileCheck,
   FileText,
   Filter,
   Gavel,
+  Loader2,
   Lock,
   Play,
   RotateCcw,
+  Save,
   Search,
   ShieldCheck,
   SlidersHorizontal,
@@ -28,6 +31,8 @@ import { DAFTAR_UNIT_KERJA } from '../data/units';
 import { BuktiDukungItem, KategoriUnit, SatkerEvaluation, StatusEvaluasi } from '../types';
 import { calculateBaseScore, calculateEvaluationScore, getMultiJuriSummary } from '../utils/scoring';
 import { useCategoryAspekConfig, isAspekActive, DEFAULT_ASPEK_CONFIG } from '../utils/aspekConfig';
+import { saveCustomJuriName, findJuriAccountByPin, JURI_DEFAULT_PIN } from '../utils/security';
+import { updateNamaJuriKeServer, getScriptUrl } from '../utils/googleSheets';
 
 interface JuriVerificationViewProps {
   evaluations: Record<string, SatkerEvaluation>;
@@ -106,6 +111,74 @@ export const JuriVerificationView: React.FC<JuriVerificationViewProps> = ({
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // Profile editing state
+  const [isEditingProfileName, setIsEditingProfileName] = useState<boolean>(false);
+  const [editingProfileNameValue, setEditingProfileNameValue] = useState<string>(activeVerifierName);
+  const [isSavingProfileName, setIsSavingProfileName] = useState<boolean>(false);
+
+  useEffect(() => {
+    setEditingProfileNameValue(activeVerifierName);
+  }, [activeVerifierName]);
+
+  const handleSaveJuriNameProfile = async (customName?: string) => {
+    const targetName = (customName !== undefined ? customName : editingProfileNameValue).trim();
+    if (!targetName) {
+      showToast('Nama verifikator tidak boleh kosong.');
+      return;
+    }
+
+    setIsSavingProfileName(true);
+
+    let pinToUse = JURI_DEFAULT_PIN;
+    try {
+      const stored = sessionStorage.getItem('SIEPP_JURI_AUTH');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.pin) pinToUse = parsed.pin;
+      }
+    } catch {}
+
+    const scriptUrl = getScriptUrl();
+    let serverSuccess = false;
+    let serverMessage = '';
+
+    if (scriptUrl && scriptUrl.trim() !== '') {
+      try {
+        const res = await updateNamaJuriKeServer(pinToUse, targetName, juriId);
+        serverSuccess = res.success;
+        serverMessage = res.message;
+      } catch (err: any) {
+        console.warn('Gagal sinkron nama juri ke Google Sheets:', err);
+      }
+    }
+
+    // Perbarui ke local storage & session
+    saveCustomJuriName(juriId, targetName);
+    localStorage.setItem('SIEPP_LAST_VERIFIER_NAME', targetName);
+    try {
+      const stored = sessionStorage.getItem('SIEPP_JURI_AUTH');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        parsed.verifierName = targetName;
+        sessionStorage.setItem('SIEPP_JURI_AUTH', JSON.stringify(parsed));
+      }
+    } catch {}
+
+    setActiveVerifierName(targetName);
+    setIsEditingProfileName(false);
+    setIsSavingProfileName(false);
+
+    if (serverSuccess) {
+      showToast(`Nama verifikator [${juriId}] berhasil disimpan dan disinkronkan ke Google Sheets!`);
+    } else {
+      showToast(
+        serverMessage
+          ? `Nama disimpan secara lokal (${serverMessage})`
+          : `Nama verifikator [${juriId}] berhasil disimpan permanen di aplikasi!`
+      );
+    }
   };
 
   // Filtered unit list
@@ -280,12 +353,69 @@ export const JuriVerificationView: React.FC<JuriVerificationViewProps> = ({
                 <span className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider block">
                   Login sebagai:
                 </span>
-                <span className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5 mt-0.5">
-                  <span className="font-mono bg-gradient-to-r from-emerald-800 to-emerald-900 text-white px-2 py-0.5 rounded-md text-[11px] font-bold shadow-xs">
-                    {juriId}
-                  </span>
-                  <span>{activeVerifierName}</span>
-                </span>
+                {isEditingProfileName ? (
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="font-mono bg-gradient-to-r from-emerald-800 to-emerald-900 text-white px-2 py-0.5 rounded-md text-[11px] font-bold shadow-xs">
+                      {juriId}
+                    </span>
+                    <input
+                      type="text"
+                      autoFocus
+                      value={editingProfileNameValue}
+                      onChange={(e) => setEditingProfileNameValue(e.target.value)}
+                      placeholder="Nama verifikator..."
+                      className="bg-white border border-emerald-400 rounded-lg px-2 py-0.5 text-xs font-bold text-slate-900 outline-none ring-1 ring-emerald-500 w-44 sm:w-56"
+                    />
+                    <button
+                      type="button"
+                      disabled={isSavingProfileName}
+                      onClick={() => handleSaveJuriNameProfile()}
+                      className="px-2.5 py-0.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer disabled:opacity-50"
+                      title="Simpan permanen ke Google Sheets"
+                    >
+                      {isSavingProfileName ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <span>Menyimpan...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-3 h-3" />
+                          <span>Simpan</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingProfileNameValue(activeVerifierName);
+                        setIsEditingProfileName(false);
+                      }}
+                      className="p-1 text-slate-400 hover:text-slate-600 rounded-md transition-colors cursor-pointer"
+                      title="Batal"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5 mt-0.5">
+                    <span className="font-mono bg-gradient-to-r from-emerald-800 to-emerald-900 text-white px-2 py-0.5 rounded-md text-[11px] font-bold shadow-xs">
+                      {juriId}
+                    </span>
+                    <span>{activeVerifierName}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingProfileNameValue(activeVerifierName);
+                        setIsEditingProfileName(true);
+                      }}
+                      className="ml-1 text-slate-400 hover:text-emerald-800 p-1 rounded-md hover:bg-emerald-100 transition-colors cursor-pointer"
+                      title="Ubah & Simpan Nama Verifikator ke Google Sheets"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1056,6 +1186,19 @@ export const JuriVerificationView: React.FC<JuriVerificationViewProps> = ({
                     placeholder="Nama Verifikator"
                     className="font-medium text-slate-800 bg-transparent outline-none w-44 sm:w-56 text-xs"
                   />
+                  <button
+                    type="button"
+                    disabled={isSavingProfileName}
+                    onClick={() => handleSaveJuriNameProfile(activeVerifierName)}
+                    className="p-1 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded transition-colors cursor-pointer"
+                    title="Simpan nama verifikator permanen ke Google Sheets"
+                  >
+                    {isSavingProfileName ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-700" />
+                    ) : (
+                      <Save className="w-3.5 h-3.5" />
+                    )}
+                  </button>
                 </div>
               </div>
 

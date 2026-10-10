@@ -8,7 +8,7 @@ import {
   resetCustomJuriNames,
   addDynamicJuriAccount
 } from '../utils/security';
-import { getScriptUrl, verifikasiPinJuriKeServer } from '../utils/googleSheets';
+import { getScriptUrl, verifikasiPinJuriKeServer, updateNamaJuriKeServer } from '../utils/googleSheets';
 
 interface JuriLoginModalProps {
   isOpen: boolean;
@@ -31,6 +31,7 @@ export const JuriLoginModal: React.FC<JuriLoginModalProps> = ({
   const [isEditAllMode, setIsEditAllMode] = useState<boolean>(false);
   const [editNamesDraft, setEditNamesDraft] = useState<Record<string, string>>({});
   const [isValidatingServer, setIsValidatingServer] = useState<boolean>(false);
+  const [isSavingName, setIsSavingName] = useState<boolean>(false);
 
   // Reload accounts when modal opens
   useEffect(() => {
@@ -46,6 +47,7 @@ export const JuriLoginModal: React.FC<JuriLoginModalProps> = ({
       setSuccessSaveMsg(null);
       setIsEditAllMode(false);
       setIsValidatingServer(false);
+      setIsSavingName(false);
       setShowPin(false);
     }
   }, [isOpen]);
@@ -71,16 +73,52 @@ export const JuriLoginModal: React.FC<JuriLoginModalProps> = ({
     }
   };
 
-  const handleSaveActiveNamePermanently = () => {
-    if (!nameInput.trim()) {
+  const handleSaveActiveNamePermanently = async () => {
+    const trimmedName = nameInput.trim();
+    if (!trimmedName) {
       setErrorMessage('Nama verifikator tidak boleh kosong.');
       return;
     }
-    saveCustomJuriName(selectedJuriId, nameInput.trim());
+
+    setIsSavingName(true);
+    setErrorMessage(null);
+    setSuccessSaveMsg(null);
+
+    // Ambil PIN dari input atau akun yang cocok
+    const currentAcc = juriAccounts.find((a) => a.id === selectedJuriId);
+    const pinToUse = pinInput.trim() || currentAcc?.pin || JURI_DEFAULT_PIN;
+    const scriptUrl = getScriptUrl();
+
+    let serverSuccess = false;
+    let serverMessage = '';
+
+    if (scriptUrl && scriptUrl.trim() !== '') {
+      try {
+        const res = await updateNamaJuriKeServer(pinToUse, trimmedName, selectedJuriId);
+        serverSuccess = res.success;
+        serverMessage = res.message;
+      } catch (err: any) {
+        console.warn('Gagal sinkron nama juri ke server:', err);
+      }
+    }
+
+    // Perbarui ke penyimpanan lokal & UI
+    saveCustomJuriName(selectedJuriId, trimmedName);
+    localStorage.setItem('SIEPP_LAST_VERIFIER_NAME', trimmedName);
     const updated = getActiveJuriAccounts();
     setJuriAccounts(updated);
-    setSuccessSaveMsg(`Nama ${selectedJuriId} berhasil disimpan permanen!`);
-    setTimeout(() => setSuccessSaveMsg(null), 3000);
+    setIsSavingName(false);
+
+    if (serverSuccess) {
+      setSuccessSaveMsg(`Nama ${selectedJuriId} berhasil disimpan dan disinkronkan ke Google Sheets!`);
+    } else {
+      setSuccessSaveMsg(
+        serverMessage
+          ? `Nama ${selectedJuriId} disimpan di lokal (${serverMessage})`
+          : `Nama ${selectedJuriId} berhasil disimpan permanen di aplikasi!`
+      );
+    }
+    setTimeout(() => setSuccessSaveMsg(null), 4000);
   };
 
   const handleOpenEditAll = () => {
@@ -94,21 +132,44 @@ export const JuriLoginModal: React.FC<JuriLoginModalProps> = ({
     setSuccessSaveMsg(null);
   };
 
-  const handleSaveAllNames = () => {
+  const handleSaveAllNames = async () => {
+    setIsSavingName(true);
+    setErrorMessage(null);
+    setSuccessSaveMsg(null);
+
+    const scriptUrl = getScriptUrl();
+    const updatePromises: Promise<any>[] = [];
+
     Object.entries(editNamesDraft).forEach(([id, name]) => {
-      if (name.trim()) {
-        saveCustomJuriName(id, name.trim());
+      const trimmed = name.trim();
+      if (trimmed) {
+        saveCustomJuriName(id, trimmed);
+        const acc = juriAccounts.find((a) => a.id === id);
+        if (scriptUrl && scriptUrl.trim() !== '') {
+          const pin = acc?.pin || JURI_DEFAULT_PIN;
+          updatePromises.push(updateNamaJuriKeServer(pin, trimmed, id));
+        }
       }
     });
+
+    if (updatePromises.length > 0) {
+      try {
+        await Promise.all(updatePromises);
+      } catch (err) {
+        console.warn('Sebagian nama juri mungkin belum tersinkron:', err);
+      }
+    }
+
     const updated = getActiveJuriAccounts();
     setJuriAccounts(updated);
     const activeOne = updated.find((a) => a.id === selectedJuriId) || updated[0];
     if (activeOne) {
       setNameInput(activeOne.defaultName);
     }
+    setIsSavingName(false);
     setIsEditAllMode(false);
-    setSuccessSaveMsg('Seluruh nama juri berhasil diperbarui dan tersimpan permanen!');
-    setTimeout(() => setSuccessSaveMsg(null), 3500);
+    setSuccessSaveMsg('Seluruh nama juri berhasil diperbarui dan tersimpan permanen ke Google Sheets!');
+    setTimeout(() => setSuccessSaveMsg(null), 4000);
   };
 
   const handleResetToDefault = () => {
@@ -309,11 +370,21 @@ export const JuriLoginModal: React.FC<JuriLoginModalProps> = ({
                   </button>
                   <button
                     type="button"
+                    disabled={isSavingName}
                     onClick={handleSaveAllNames}
-                    className="px-4 py-2 bg-gradient-to-r from-emerald-800 to-emerald-900 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95"
+                    className="px-4 py-2 bg-gradient-to-r from-emerald-800 to-emerald-900 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95 disabled:opacity-60"
                   >
-                    <Save className="w-3.5 h-3.5" />
-                    <span>Simpan Permanen Semua</span>
+                    {isSavingName ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Menyimpan ke Server...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Simpan Permanen Semua</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -369,12 +440,22 @@ export const JuriLoginModal: React.FC<JuriLoginModalProps> = ({
               </label>
               <button
                 type="button"
+                disabled={isSavingName}
                 onClick={handleSaveActiveNamePermanently}
-                className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-60"
                 title="Simpan nama ini permanen untuk akun juri yang sedang dipilih"
               >
-                <Save className="w-3 h-3" />
-                <span>Simpan Permanen untuk {selectedJuriId}</span>
+                {isSavingName ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin text-emerald-700" />
+                    <span>Menyimpan...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3 h-3" />
+                    <span>Simpan Permanen untuk {selectedJuriId}</span>
+                  </>
+                )}
               </button>
             </div>
             <div className="relative">

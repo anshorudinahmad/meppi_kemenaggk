@@ -404,6 +404,100 @@ export async function verifikasiPinJuriKeServer(pin: string): Promise<{
 }
 
 /**
+ * Memperbarui Nama Profil Juri secara Permanen ke Server Google Sheets (POST action: UPDATE_NAMA_JURI)
+ * Payload format:
+ * {
+ *   action: "UPDATE_NAMA_JURI",
+ *   pin: pinJuriLogin,
+ *   namaBaru: inputNamaBaru,
+ *   id: idJuri (opsional)
+ * }
+ */
+export async function updateNamaJuriKeServer(
+  pin: string,
+  namaBaru: string,
+  idJuri?: string
+): Promise<{
+  success: boolean;
+  message: string;
+  isNetworkError?: boolean;
+}> {
+  const url = getScriptUrl();
+  if (!url || url.trim() === '') {
+    return {
+      success: false,
+      message: 'URL Google Apps Script belum dikonfigurasi. Nama hanya disimpan secara lokal.',
+      isNetworkError: true
+    };
+  }
+
+  try {
+    const payload: any = {
+      action: 'UPDATE_NAMA_JURI',
+      pin: pin.trim(),
+      namaBaru: namaBaru.trim()
+    };
+    if (idJuri) {
+      payload.id = idJuri.trim();
+      payload.idJuri = idJuri.trim();
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      return {
+        success: false,
+        message: `HTTP ${response.status}: Gagal menghubungi server Google Sheets.`,
+        isNetworkError: true
+      };
+    }
+
+    const text = await response.text();
+    let resJson: any = null;
+    try {
+      resJson = JSON.parse(text);
+    } catch {
+      // Jika server mengembalikan teks sukses biasa
+      if (text.toLowerCase().includes('sukses') || text.toLowerCase().includes('success')) {
+        return {
+          success: true,
+          message: 'Nama Juri berhasil diperbarui di server!'
+        };
+      }
+      return {
+        success: false,
+        message: 'Respon server Google Sheets bukan format JSON yang valid.',
+        isNetworkError: true
+      };
+    }
+
+    if (resJson && (resJson.status === 'success' || resJson.success === true)) {
+      return {
+        success: true,
+        message: resJson.message || 'Nama Juri berhasil diperbarui dan tersimpan permanen di Google Sheets!'
+      };
+    }
+
+    return {
+      success: false,
+      message: resJson?.message || 'Server menolak pembaruan nama Juri.'
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err?.message || 'Gagal terhubung ke endpoint Google Sheets.',
+      isNetworkError: true
+    };
+  }
+}
+
+/**
  * Menyimpan Pengaturan Aspek Penilaian Dinamis Spesifik per Kategori ke Google Apps Script (POST)
  * Payload format:
  * {
