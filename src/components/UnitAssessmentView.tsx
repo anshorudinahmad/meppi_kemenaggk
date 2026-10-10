@@ -1073,7 +1073,7 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
                             title={`Buka subfolder Google Drive butir ${item.code}`}
                           >
                             <FolderUp className="w-3.5 h-3.5 text-blue-600" />
-                            <span>📤 Upload Bukti {item.code}</span>
+                            <span>📤 Buka Folder {item.code}</span>
                           </a>
                         )}
                       </div>
@@ -1089,7 +1089,7 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
                       />
 
                       <p className="text-[11px] text-slate-500 mt-1.5 leading-snug">
-                        Klik tombol di atas untuk membuka folder. Buat folder baru dengan nama satker Anda di dalamnya, unggah file, lalu salin link file tersebut ke kolom ini.
+                        Klik tombol di atas, buat folder baru dengan nama Satker Anda, unggah file, lalu copy-paste link file Anda ke kolom ini.
                       </p>
                       <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">
                         *Pastikan izin tautan disetel &quot;Anyone with the link can view&quot;.
@@ -1153,7 +1153,7 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
                         title="Buka subfolder Google Drive video praktik pelayanan"
                       >
                         <FolderUp className="w-3.5 h-3.5 text-blue-600" />
-                        <span>📤 Upload Video ke Drive (8.1)</span>
+                        <span>📤 Buka Folder 8.1</span>
                       </a>
                     )}
                   </div>

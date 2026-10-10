@@ -747,11 +747,11 @@ export const JuriVerificationView: React.FC<JuriVerificationViewProps> = ({
                                 href={LINK_FOLDER_BUKTI[item.code]}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                title={`Buka subfolder Google Drive butir ${item.code} jika tautan satker tidak dapat diakses`}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-300 rounded-lg text-[11px] font-medium transition-colors"
+                                title={`Buka subfolder Google Drive butir ${item.code} jika tautan satker tidak dapat diakses atau terkunci`}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 hover:text-amber-900 border border-amber-300 rounded-lg text-[11px] font-semibold transition-colors shadow-xs"
                               >
-                                <FolderSearch className="w-3.5 h-3.5 text-blue-600" />
-                                <span>Cari di Folder {item.code}</span>
+                                <FolderSearch className="w-3.5 h-3.5 text-amber-700" />
+                                <span>📂 Cek Arsip Folder {item.code}</span>
                               </a>
                             )}
                           </div>
@@ -921,11 +921,11 @@ export const JuriVerificationView: React.FC<JuriVerificationViewProps> = ({
                               href={LINK_FOLDER_BUKTI["8.1"]}
                               target="_blank"
                               rel="noopener noreferrer"
-                              title="Buka subfolder Google Drive video 8.1 jika tautan satker bermasalah"
-                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-300 rounded-lg text-[11px] font-medium transition-colors"
+                              title="Buka subfolder Google Drive video 8.1 jika tautan satker bermasalah atau terkunci"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 hover:text-amber-900 border border-amber-300 rounded-lg text-[11px] font-semibold transition-colors shadow-xs"
                             >
-                              <FolderSearch className="w-3.5 h-3.5 text-blue-600" />
-                              <span>Cari di Folder 8.1 (Video)</span>
+                              <FolderSearch className="w-3.5 h-3.5 text-amber-700" />
+                              <span>📂 Cek Arsip Folder 8.1</span>
                             </a>
                           )}
                         </div>
