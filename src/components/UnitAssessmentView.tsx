@@ -945,8 +945,8 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
         <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/70">
           <div className="space-y-1.5">
             <div className="flex justify-between items-center text-xs">
-              <span className="font-semibold text-slate-700">Kelengkapan Pengisian</span>
-              <span className="font-mono font-bold text-emerald-800">
+              <span className="font-semibold text-slate-700" style={{ fontSize: '13px' }}>Kelengkapan Pengisian</span>
+              <span className="font-mono font-bold text-emerald-800" style={{ fontSize: '13px' }}>
                 {answeredCount}/{totalItemsCount} butir ({progressPercent}%)
               </span>
             </div>
@@ -1021,7 +1021,7 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
                 >
                   {aspek.id}
                 </span>
-                <span className="whitespace-nowrap">{aspek.nama}</span>
+                <span className="whitespace-nowrap" style={{ fontSize: '13px' }}>{aspek.nama}</span>
                 <span
                   className={`text-[10px] px-2 py-0.5 rounded-md font-mono tabular-nums ${
                     isActive
