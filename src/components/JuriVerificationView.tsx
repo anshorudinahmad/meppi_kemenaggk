@@ -11,7 +11,6 @@ import {
   FileCheck,
   FileText,
   Filter,
-  FolderSearch,
   Gavel,
   Lock,
   Play,
@@ -25,7 +24,6 @@ import {
   X
 } from 'lucide-react';
 import { ASPEK_LIST, INSTRUMEN_LIST } from '../data/instruments';
-import { LINK_FOLDER_BUKTI } from '../data/driveFolders';
 import { DAFTAR_UNIT_KERJA } from '../data/units';
 import { BuktiDukungItem, KategoriUnit, SatkerEvaluation, StatusEvaluasi } from '../types';
 import { calculateBaseScore, calculateEvaluationScore, getMultiJuriSummary } from '../utils/scoring';
@@ -752,19 +750,6 @@ export const JuriVerificationView: React.FC<JuriVerificationViewProps> = ({
                                 Belum ada berkas dari satker
                               </span>
                             )}
-
-                            {LINK_FOLDER_BUKTI[item.code] && (
-                              <a
-                                href={LINK_FOLDER_BUKTI[item.code]}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                title={`Buka subfolder Google Drive butir ${item.code} jika tautan satker tidak dapat diakses atau terkunci`}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 hover:text-amber-900 border border-amber-300 rounded-lg text-[11px] font-semibold transition-colors shadow-xs"
-                              >
-                                <FolderSearch className="w-3.5 h-3.5 text-amber-700" />
-                                <span>📂 Cek Arsip Folder {item.code}</span>
-                              </a>
-                            )}
                           </div>
                         </div>
 
@@ -927,18 +912,6 @@ export const JuriVerificationView: React.FC<JuriVerificationViewProps> = ({
                               <span className="text-slate-400 italic">Belum ada tautan video</span>
                             )}
                           </div>
-                          {LINK_FOLDER_BUKTI["8.1"] && (
-                            <a
-                              href={LINK_FOLDER_BUKTI["8.1"]}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title="Buka subfolder Google Drive video 8.1 jika tautan satker bermasalah atau terkunci"
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 hover:text-amber-900 border border-amber-300 rounded-lg text-[11px] font-semibold transition-colors shadow-xs"
-                            >
-                              <FolderSearch className="w-3.5 h-3.5 text-amber-700" />
-                              <span>📂 Cek Arsip Folder 8.1</span>
-                            </a>
-                          )}
                         </div>
                       </div>
                     </div>
