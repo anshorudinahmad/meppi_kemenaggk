@@ -435,16 +435,18 @@ export async function simpanPengaturanAspekKeServer(
 
 /**
  * Mengunggah file bukti dukung ke Google Apps Script (POST action: UPLOAD_FILE)
- * Payload:
+ * Payload format:
  * {
  *   action: "UPLOAD_FILE",
+ *   id: idSatkerTerpilih,
  *   pin: inputPinSatker,
  *   base64: base64String,
  *   mimeType: file.type,
- *   fileName: idSatkerTerpilih + "_" + idButir + "_" + namaEviden
+ *   fileName: namaFileLengkap
  * }
  */
 export async function uploadFileBuktiKeServer(params: {
+  id: string;
   pin: string;
   base64: string;
   mimeType: string;
@@ -465,6 +467,7 @@ export async function uploadFileBuktiKeServer(params: {
   try {
     const payload = {
       action: 'UPLOAD_FILE',
+      id: params.id,
       pin: params.pin,
       base64: params.base64,
       mimeType: params.mimeType,

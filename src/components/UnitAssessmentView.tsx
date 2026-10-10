@@ -426,7 +426,8 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
 
       // 3. Kirim POST ke Apps Script
       const res = await uploadFileBuktiKeServer({
-        pin: currentPin,
+        id: selectedUnitId,
+        pin: currentPin || unlockedPins[selectedUnitId] || pinInput || '',
         base64: base64String,
         mimeType: uploadSelectedFile.type || 'application/octet-stream',
         fileName: sanitizedFileName
