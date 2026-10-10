@@ -1,0 +1,6 @@
+{
+  "name": "SI-EPP Kemenag Gunungkidul",
+  "description": "Sistem Evaluasi dan Pemantauan Standar Pelayanan Publik KUA dan Madrasah Negeri Kantor Kementerian Agama Kabupaten Gunungkidul.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
