@@ -11,6 +11,7 @@ import {
   Eye,
   FileCheck,
   FileText,
+  FolderUp,
   HelpCircle,
   KeyRound,
   Lock,
@@ -19,9 +20,11 @@ import {
   Send,
   ShieldAlert,
   Unlock,
+  UploadCloud,
   Video
 } from 'lucide-react';
 import { ASPEK_LIST, INSTRUMEN_LIST } from '../data/instruments';
+import { LINK_FOLDER_BUKTI } from '../data/driveFolders';
 import { DAFTAR_UNIT_KERJA } from '../data/units';
 import { KategoriUnit, SatkerEvaluation, StatusEvaluasi } from '../types';
 import { calculateEvaluationScore, getMultiJuriSummary } from '../utils/scoring';
@@ -1057,9 +1060,23 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
                         </p>
                       </div>
 
-                      <p className="text-[11px] text-slate-500 mb-1.5 font-medium">
-                        Tautan Dokumen / Bukti Dukung:
-                      </p>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-1.5">
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          Tautan Dokumen / Bukti Dukung:
+                        </p>
+                        {LINK_FOLDER_BUKTI[item.code] && (
+                          <a
+                            href={LINK_FOLDER_BUKTI[item.code]}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 border border-blue-200 rounded-lg text-[11px] font-bold shadow-xs transition-colors self-start sm:self-auto"
+                            title={`Buka subfolder Google Drive butir ${item.code}`}
+                          >
+                            <FolderUp className="w-3.5 h-3.5 text-blue-600" />
+                            <span>📤 Upload Bukti {item.code}</span>
+                          </a>
+                        )}
+                      </div>
 
                       <input
                         type="url"
@@ -1072,7 +1089,10 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
                       />
 
                       <p className="text-[11px] text-slate-500 mt-1.5 leading-snug">
-                        *Pastikan link dapat diakses (Anyone with the link). Anda juga bisa mengunggah file ke Folder Terpusat di atas lalu menempelkan link file-nya di sini.
+                        Klik tombol di atas untuk membuka folder. Buat folder baru dengan nama satker Anda di dalamnya, unggah file, lalu salin link file tersebut ke kolom ini.
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">
+                        *Pastikan izin tautan disetel &quot;Anyone with the link can view&quot;.
                       </p>
                     </div>
 
@@ -1120,9 +1140,23 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
               {/* Video URL & Deskripsi Inputs */}
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
-                    Tautan Video Resmi (YouTube / Google Drive) *
-                  </label>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-1.5">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                      Tautan Video Resmi (YouTube / Google Drive) *
+                    </label>
+                    {LINK_FOLDER_BUKTI["8.1"] && (
+                      <a
+                        href={LINK_FOLDER_BUKTI["8.1"]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 border border-blue-200 rounded-lg text-[11px] font-bold shadow-xs transition-colors self-start sm:self-auto"
+                        title="Buka subfolder Google Drive video praktik pelayanan"
+                      >
+                        <FolderUp className="w-3.5 h-3.5 text-blue-600" />
+                        <span>📤 Upload Video ke Drive (8.1)</span>
+                      </a>
+                    )}
+                  </div>
                   <input
                     type="url"
                     value={currentEval.videoUrl || ''}
@@ -1133,7 +1167,7 @@ export const UnitAssessmentView: React.FC<UnitAssessmentViewProps> = ({
                     className="w-full bg-slate-50 disabled:bg-slate-100 disabled:cursor-not-allowed border border-slate-300 rounded-xl p-3 text-sm text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
                   />
                   <p className="text-[11px] text-slate-500 mt-1.5 leading-snug">
-                    *Pastikan link dapat diakses (Anyone with the link). Anda juga bisa mengunggah file ke Folder Terpusat di atas lalu menempelkan link file-nya di sini. Rekomendasi: Unggah ke YouTube (status Publik/Unlisted) agar pratinjau player dapat diputar langsung oleh Juri.
+                    Klik tombol di atas jika ingin mengunggah video ke Drive. Buat folder nama satker Anda, unggah video, lalu salin link-nya ke kolom ini. Rekomendasi: Unggah ke YouTube (status Publik/Unlisted) agar pratinjau player dapat diputar langsung oleh Juri.
                   </p>
                 </div>
 

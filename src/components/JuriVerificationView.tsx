@@ -11,6 +11,7 @@ import {
   FileCheck,
   FileText,
   Filter,
+  FolderSearch,
   Gavel,
   Lock,
   Play,
@@ -24,6 +25,7 @@ import {
   X
 } from 'lucide-react';
 import { ASPEK_LIST, INSTRUMEN_LIST } from '../data/instruments';
+import { LINK_FOLDER_BUKTI } from '../data/driveFolders';
 import { DAFTAR_UNIT_KERJA } from '../data/units';
 import { KategoriUnit, SatkerEvaluation, StatusEvaluasi } from '../types';
 import { calculateBaseScore, calculateEvaluationScore, getMultiJuriSummary } from '../utils/scoring';
@@ -723,21 +725,36 @@ export const JuriVerificationView: React.FC<JuriVerificationViewProps> = ({
                             <h5 className="font-bold text-slate-900 text-sm">{item.judul}</h5>
                           </div>
 
-                          {evidenceLink ? (
-                            <a
-                              href={evidenceLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-semibold transition-colors self-start sm:self-auto"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              <span>Buka Dokumen Bukti Dukung</span>
-                            </a>
-                          ) : (
-                            <span className="text-xs text-slate-400 italic">
-                              Tidak ada link bukti dukung
-                            </span>
-                          )}
+                          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                            {evidenceLink ? (
+                              <a
+                                href={evidenceLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-semibold transition-colors"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                <span>Buka Dokumen Bukti Dukung</span>
+                              </a>
+                            ) : (
+                              <span className="text-xs text-slate-400 italic">
+                                Belum ada link dari satker
+                              </span>
+                            )}
+
+                            {LINK_FOLDER_BUKTI[item.code] && (
+                              <a
+                                href={LINK_FOLDER_BUKTI[item.code]}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={`Buka subfolder Google Drive butir ${item.code} jika tautan satker tidak dapat diakses`}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-300 rounded-lg text-[11px] font-medium transition-colors"
+                              >
+                                <FolderSearch className="w-3.5 h-3.5 text-blue-600" />
+                                <span>Cari di Folder {item.code}</span>
+                              </a>
+                            )}
+                          </div>
                         </div>
 
                         {/* Pertanyaan */}
@@ -883,19 +900,33 @@ export const JuriVerificationView: React.FC<JuriVerificationViewProps> = ({
                           </p>
                         </div>
 
-                        <div className="mt-4 pt-3 border-t border-slate-200 text-xs text-slate-500">
-                          Tautan:{' '}
-                          {verifyingEval?.videoUrl ? (
+                        <div className="mt-4 pt-3 border-t border-slate-200 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-2">
+                          <div className="truncate max-w-sm">
+                            Tautan:{' '}
+                            {verifyingEval?.videoUrl ? (
+                              <a
+                                href={verifyingEval.videoUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-emerald-700 font-semibold underline truncate inline-block max-w-xs align-bottom"
+                              >
+                                {verifyingEval.videoUrl}
+                              </a>
+                            ) : (
+                              <span className="text-slate-400 italic">Belum ada tautan video</span>
+                            )}
+                          </div>
+                          {LINK_FOLDER_BUKTI["8.1"] && (
                             <a
-                              href={verifyingEval.videoUrl}
+                              href={LINK_FOLDER_BUKTI["8.1"]}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-emerald-700 font-semibold underline truncate inline-block max-w-xs align-bottom"
+                              title="Buka subfolder Google Drive video 8.1 jika tautan satker bermasalah"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-300 rounded-lg text-[11px] font-medium transition-colors"
                             >
-                              {verifyingEval.videoUrl}
+                              <FolderSearch className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Cari di Folder 8.1 (Video)</span>
                             </a>
-                          ) : (
-                            <span className="text-slate-400">-</span>
                           )}
                         </div>
                       </div>
